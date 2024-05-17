@@ -1,5 +1,0 @@
-animals,51,500
-people,51,500
-food-drink,51,500
-nature,51,500
-architecture-interior,52,510
