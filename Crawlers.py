@@ -5,6 +5,7 @@ import time
 # Unsplash API
 api_url = "https://api.unsplash.com/search/photos"
 access_key = '-7mzLi8x261zMRKU-Rw_Qz_vIvaYvf2sWHV1l1pO5ZE'
+# access_key = 'y0TRzwdfxA4PpZBPw3Lr8a6bYyAugiKItS7b_80UTA4'
 
 # Crawl parameter
 categories = {
@@ -13,15 +14,6 @@ categories = {
     'food-drink': 'food drink',
     'nature': 'nature',
     'architecture-interior': 'architecture interior'
-}
-
-# Desired number of images to download for each category
-total_images_to_download = {
-    'animals': 0,
-    'people': 10,
-    'food-drink': 500,
-    'nature': 500,
-    'architecture-interior': 500
 }
 
 # Save directory and changelog file
@@ -51,17 +43,21 @@ for category in categories:
 
 # Crawling
 def crawl_images(category, query, download_num):
+    if download_num == 0:
+        print("No need to update: " + category)
+        return
+
     global category_state
     img_index = category_state[category]['images_downloaded']
     cur_page = category_state[category]['page']
 
     try:
-        while img_index < download_num:
+        while download_num > 0:
             params = {
                 'query': query,
                 'client_id': access_key,
                 'per_page': 50,
-                'page': cur_page + 1
+                'page': cur_page
             }
             response = requests.get(api_url, params=params)
 
@@ -71,7 +67,7 @@ def crawl_images(category, query, download_num):
                 print(f'Found {len(images)} images for category {category} on page {cur_page}')
 
                 for idx, img in enumerate(images):
-                    if img_index >= download_num:
+                    if download_num <= 0:
                         break
                     img_url = img['urls']['regular']
                     try:
@@ -81,8 +77,10 @@ def crawl_images(category, query, download_num):
                             handler.write(img_data)
                         print(f'Downloaded {img_filename}')
                         img_index += 1
+                        download_num -= 1
                     except Exception as e:
                         print(f'Failed to download {img_url}: {e}')
+
                 cur_page += 1
                 time.sleep(1)
             else:
@@ -100,6 +98,14 @@ def crawl_images(category, query, download_num):
     print("Completed: " + category)
 
 
+# Desired number of images to download for each category
+total_images_to_download = {
+    'animals': 0,
+    'people': 0,
+    'food-drink': 0,
+    'nature': 0,
+    'architecture-interior': 0
+}
 # Instance
 for curr_category, curr_query in categories.items():
-    crawl_images(curr_category, curr_query, total_images_to_download[category])
+    crawl_images(curr_category, curr_query, total_images_to_download[curr_category])
