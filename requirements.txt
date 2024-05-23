@@ -1,0 +1,11 @@
+customtkinter==5.2.2
+matplotlib~=3.7.1
+matplotlib==3.7.1
+numpy==1.24.3
+opencv_python==4.8.1.78
+pandas==1.5.3
+Requests==2.31.0
+
+future~=0.18.3
+pillow~=9.4.0
+opencv-python~=4.9.0.80
