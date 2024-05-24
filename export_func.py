@@ -121,6 +121,7 @@ def create_export_window(filename):
     root = tk.Tk()
     root.title("Image Export Window")
     root.configure(bg="#004c66")
+    root.iconbitmap('./icon/icon.ico')
 
     # Convert the image buffer to a PIL Image
     original_image = Image.open(filename)
