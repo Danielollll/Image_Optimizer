@@ -198,7 +198,7 @@ def display_image(img, frame):
     img_tk = ctk.CTkImage(img_pil, size=(max_width, max_height))
     label = ctk.CTkLabel(frame, image=img_tk, text="")
     label.image = img_tk
-    label.pack()
+    label.pack(padx=10, pady=10, fill='x')
 
 
 def plot_img_hist(img, frame, width, height):
