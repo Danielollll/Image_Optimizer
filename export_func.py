@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from PIL import Image, ImageEnhance, ImageTk
 from tkinter import filedialog, messagebox
@@ -16,6 +17,8 @@ def save_image(image, output_image_path):
     else:
         image.save(output_image_path)
     print(f"Image saved to: {output_image_path}")
+    root.quit()
+    root.destroy()
 
 
 def compress_image(image, quality=85):
@@ -40,6 +43,7 @@ def resize_image(image, max_width, max_height):
 
 
 def update_image():
+    global img_tk
     img = processed_image.copy()
 
     # Apply compression
@@ -52,27 +56,27 @@ def update_image():
 
     # Update the displayed image
     img_tk = ImageTk.PhotoImage(img)
-    canvas.image = img_tk
-    canvas.create_image(0, 0, anchor=tk.NW, image=img_tk)
+    canvas_export.delete("current_image")  # Delete the previous image
+    canvas_export.create_image(0, 0, anchor=tk.NW, image=img_tk, tags="current_image")  # Add the new image with a tag
 
     # Draw crop rectangle
-    canvas.delete("rect")
-    canvas.create_rectangle(start_x, start_y, end_x, end_y, outline='red', tag="rect")
+    canvas_export.delete("rect")
+    canvas_export.create_rectangle(start_x, start_y, end_x, end_y, outline='red', tag="rect")
 
 
 def on_canvas_click(event):
     global start_x, start_y
     start_x = event.x
     start_y = event.y
-    canvas.delete("rect")
+    canvas_export.delete("rect")
 
 
 def on_canvas_drag(event):
     global start_x, start_y, end_x, end_y
     end_x = event.x
     end_y = event.y
-    canvas.delete("rect")
-    canvas.create_rectangle(start_x, start_y, end_x, end_y, outline='red', tag="rect")
+    canvas_export.delete("rect")
+    canvas_export.create_rectangle(start_x, start_y, end_x, end_y, outline='red', tag="rect")
 
 
 def on_canvas_release(event):
@@ -113,8 +117,7 @@ def crop_and_process_image(filename):
 
 
 def create_export_window(filename):
-    print(filename)
-    global original_image, processed_image, compress_scale, clarity_scale, canvas, start_x, start_y, end_x, end_y, canvas_frame, root
+    global original_image, processed_image, compress_scale, clarity_scale, canvas_export, start_x, start_y, end_x, end_y, canvas_frame, root, img_tk
     root = tk.Tk()
     root.title("Image Export Window")
     root.configure(bg="#004c66")
@@ -139,18 +142,18 @@ def create_export_window(filename):
     canvas_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
     # Set up the canvas
-    canvas = tk.Canvas(canvas_frame, width=new_width, height=new_height, bg='white')
-    canvas.pack(fill=tk.BOTH, expand=True)
+    canvas_export = tk.Canvas(canvas_frame, width=new_width, height=new_height, bg='white')
+    canvas_export.pack(fill=tk.BOTH, expand=True)
 
     # Bind canvas events
-    canvas.bind("<Button-1>", on_canvas_click)
-    canvas.bind("<B1-Motion>", on_canvas_drag)
-    canvas.bind("<ButtonRelease-1>", on_canvas_release)
+    canvas_export.bind("<Button-1>", on_canvas_click)
+    canvas_export.bind("<B1-Motion>", on_canvas_drag)
+    canvas_export.bind("<ButtonRelease-1>", on_canvas_release)
 
     # Display the initial image
     img_tk = ImageTk.PhotoImage(processed_image)
-    canvas.image = img_tk
-    canvas.create_image(0, 0, anchor=tk.NW, image=img_tk)
+    canvas_export.image = img_tk
+    canvas_export.create_image(0, 0, anchor=tk.NW, image=img_tk)
 
     # Set up compression scale
     compress_label = tk.Label(root, text="Compression", bg="yellow")
@@ -179,14 +182,18 @@ def create_export_window(filename):
     confirm_button.pack(side='left', padx=10)
 
     # Set up cancel button
-    cancel_button = tk.Button(button_frame, text="Cancel", command=root.quit, bg="yellow")
+    cancel_button = tk.Button(button_frame, text="Cancel", command=root.destroy, bg="yellow")
     cancel_button.pack(side='right', padx=10)
 
     root.mainloop()
 
 
 if __name__ == "__main__":
-    # Assuming the image file path is passed directly for testing
-    img_path = filedialog.askopenfilename(title="Select an Image", filetypes=(("Image files", "*.jpg;*.jpeg;*.png"), ("All files", "*.*")))
-    if img_path:
-        create_export_window(img_path)
+    if len(sys.argv) < 2:
+        # Assuming the image file path is passed directly for testing
+        img_path = filedialog.askopenfilename(title="Select an Image", filetypes=(("Image files", "*.jpg;*.jpeg;*.png"), ("All files", "*.*")))
+        if img_path:
+            create_export_window(img_path)
+    else:
+        tmp_file_path = sys.argv[1]
+        create_export_window(tmp_file_path)
