@@ -16,7 +16,6 @@ def save_image(image, output_image_path):
         image.save(output_image_path, format='PNG')
     else:
         image.save(output_image_path)
-    print(f"Image saved to: {output_image_path}")
     root.quit()
     root.destroy()
 

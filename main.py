@@ -6,7 +6,7 @@ import customtkinter as ctk
 import numpy as np
 import pandas as pd
 from PIL import Image
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import analyze_func as img_func
@@ -267,7 +267,10 @@ def revert_to_original():
 def auto_optimize():
     global img_buffer
     json_dataset_path = ".\\dataset\\" + combobox.get() + "\\" + combobox.get() + "_result.json"
-
+    if not os.path.exists(json_dataset_path):
+        tk.messagebox.showinfo("Cannot find dataset",
+                               "Cannot find json data file for this dataset. Check & Update Dataset.")
+        return
     # Get image parameter values
     WB_red, WB_green, WB_blue = img_func.get_white_balance(img_buffer)
     avg_brightness = img_func.get_brightness(img_buffer)
@@ -348,6 +351,10 @@ def export_img():
 def dataset_select(value):
     # Load the dataset
     json_dataset_path = os.path.join(".\\dataset", value, f"{value}_result.json")
+    if not os.path.exists(json_dataset_path):
+        tk.messagebox.showinfo("Cannot find dataset",
+                               "Cannot find json data file for this dataset. Check & Update Dataset.")
+        return
     stats, original_stats = dataset_analysis.dataset_desc(json_dataset_path)
 
     # Create a combobox to select the parameter
