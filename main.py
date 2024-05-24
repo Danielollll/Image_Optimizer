@@ -356,7 +356,7 @@ def dataset_select(value):
 
     # Clear previous stats
     for widget in f_dataset.winfo_children():
-        if widget != home and widget != combobox_m:
+        if widget != home and widget != update and widget != combobox_m:
             widget.destroy()
 
     # Display the box plot of all numeric columns
@@ -442,6 +442,25 @@ def display_parameter_stats(param, stats, parameter_combobox):
         plt.close()
 
 
+def dataset_update():
+    # Create waiting window
+    update.configure(text="Processing", fg_color="red")
+    update.update()
+    # Start Tasks
+    img_func.process_images_in_folders(root_dir)
+    global subfolders
+    subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if
+                  os.path.isdir(os.path.join(root_dir, sub_folder))]
+    combobox.configure(values=subfolders)
+    combobox_m.configure(values=subfolders)
+    combobox.update()
+    combobox_m.update()
+    dataset_select(combobox_m.get())
+    # End Waiting Window
+    update.configure(text="Update Dataset", fg_color="#3b8ed0")
+    update.update()
+
+
 # Main window
 img_buffer = None
 bg_color = "white"
@@ -462,6 +481,10 @@ for f in (f_wizard, f_main, f_dataset):
 # Configure grid to expand
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
+
+# Predefined root directory
+root_dir = "./dataset"
+subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, sub_folder))]
 
 # Wizard Interface
 f_wizard_bg_color = "white"
@@ -540,10 +563,6 @@ f_main_right_bottom.grid(row=1, column=0, sticky="nsew")
 f_main_right_bottom.grid_rowconfigure(0, weight=1)
 f_main_right_bottom.grid_columnconfigure(0, weight=1)
 
-# Predefined root directory
-root_dir = "./dataset"
-
-subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, sub_folder))]
 # Combobox to display sub-folder names
 combobox = ctk.CTkComboBox(f_main_right_bottom, values=subfolders)
 combobox.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
@@ -566,8 +585,13 @@ f_main.grid_columnconfigure(0, weight=1)
 f_main.grid_columnconfigure(1, weight=1)
 
 # Database Management Interface
+# Back To Wizard Button
 home = ctk.CTkButton(f_dataset, text="Back To Wizard", command=lambda: raise_frame(f_wizard))
 home.pack(padx=20, pady=10, fill='x')
+
+# Dataset Update Button
+update = ctk.CTkButton(f_dataset, text="Update Dataset", command=dataset_update)
+update.pack(padx=20, pady=10, fill='x')
 
 # Combobox to display sub-folder names
 combobox_m = ctk.CTkComboBox(f_dataset, values=subfolders, command=lambda value: dataset_select(value))

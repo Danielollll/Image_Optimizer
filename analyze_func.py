@@ -352,11 +352,13 @@ def process_images_in_folders(root_dir):
     for sub_folder in os.listdir(root_dir):
         sub_folder_path = os.path.join(root_dir, sub_folder)
         if os.path.isdir(sub_folder_path):
+            # Define the output JSON file path
+            output_file = os.path.join(sub_folder_path, f"{sub_folder}_result.json")
+            if os.path.exists(output_file):
+                os.remove(output_file)
             # Gather all image file paths in the sub-folder
             image_paths = [os.path.join(sub_folder_path, f) for f in os.listdir(sub_folder_path) if
                            os.path.isfile(os.path.join(sub_folder_path, f))]
-            # Define the output JSON file path
-            output_file = os.path.join(sub_folder_path, f"{sub_folder}_result.json")
             # Perform image analysis and save the results
             for image_path in image_paths:
                 image_analysis(image_path, output_file)
