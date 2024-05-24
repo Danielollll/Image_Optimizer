@@ -345,7 +345,6 @@ def export_img():
             tmp_file_path = os.path.join(temp_dir, encoded_img_name.decode('utf-8'))
             # Save the image to the temporary file
             cv.imwrite(tmp_file_path, img_buffer)
-            print(tmp_file_path)
             try:
                 subprocess.run(['python', 'export_func.py', tmp_file_path], capture_output=True, text=True)
             except Exception as e:
