@@ -306,9 +306,9 @@ def auto_optimize():
     modified_img = img_func.modify_contrast(modified_img, optimal_vals["contrast"])
     modified_img = img_func.modify_saturation(modified_img, optimal_vals["avg_saturation"])
     modified_img = img_func.modify_highlights(modified_img, optimal_vals["avg_highlights"])
-    modified_img = img_func.modify_shadows(modified_img, optimal_vals["avg_shadow"])
     modified_img = img_func.modify_noise(modified_img, optimal_vals["avg_noisy"])
     modified_img = img_func.modify_brightness(modified_img, optimal_vals["avg_brightness"])
+    modified_img = img_func.modify_shadows(modified_img, optimal_vals["avg_shadow"])
     modified_img = img_func.modify_perceived_avg_brightness(modified_img, optimal_vals["avg_perceived_brightness"])
 
     if modified_img is not None:
