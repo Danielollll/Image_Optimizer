@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-import os
 
 
 def dataset_desc(file_path):
