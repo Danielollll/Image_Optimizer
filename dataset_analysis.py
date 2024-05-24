@@ -76,4 +76,4 @@ def dataset_desc(file_path):
         # Append the statistics to the stats DataFrame using concat
         stats_df = pd.concat([stats_df, pd.DataFrame([stats])], ignore_index=True)
 
-    print(stats_df)
+    return stats_df, df

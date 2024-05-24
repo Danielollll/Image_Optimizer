@@ -13,6 +13,7 @@ import analyze_func as img_func
 import dataset_training as dataset_training
 import subprocess
 import dataset_analysis
+import seaborn as sns
 
 
 def raise_frame(next_frame):
@@ -352,11 +353,104 @@ def export_img():
 
 
 def dataset_select(value):
-    json_dataset_path = ".\\dataset\\" + combobox_m.get() + "\\" + combobox_m.get() + "_result.json"
-    stats = dataset_analysis.dataset_desc(json_dataset_path)
-    # Ensure optimal_vals contains scalar values
-    stats = {key: val.item() if isinstance(val, pd.Series) else val for key, val in stats.items()}
-    print(stats)
+    # Load the dataset
+    json_dataset_path = os.path.join(".\\dataset", value, f"{value}_result.json")
+    stats, original_stats = dataset_analysis.dataset_desc(json_dataset_path)
+
+    # Create a combobox to select the parameter
+    parameter_label = ctk.CTkLabel(f_dataset, text="Select Parameter:")
+    parameter_label.pack(padx=20, pady=10, anchor="w")
+
+    # Clear previous stats
+    for widget in f_dataset.winfo_children():
+        if widget != home and widget != combobox_m:
+            widget.destroy()
+
+    # Display the box plot of all numeric columns
+    plt.figure(figsize=(18, 4))
+    plt.xticks(fontsize=8)
+    sns.boxplot(data=original_stats, color='blue')
+    plt.title('Boxplot of Numeric Columns')
+    plt.xlabel('Columns')
+    plt.ylabel('Values')
+    plt.grid(True)
+    plt.tight_layout()
+    boxplot_canvas = FigureCanvasTkAgg(plt.gcf(), master=f_dataset)
+    boxplot_canvas.draw()
+    boxplot_canvas.get_tk_widget().pack()
+    plt.close()
+
+    global parameter_combobox
+    parameter_combobox = ctk.CTkComboBox(f_dataset, values=stats['Parameter'].tolist(),
+                                         command=lambda param: display_parameter_stats(param, stats, parameter_combobox))
+    parameter_combobox.pack(padx=20, pady=10, fill="x")
+
+    # Initial display of the first parameter's stats
+    if not stats.empty:
+        display_parameter_stats(stats['Parameter'].iloc[0], stats, parameter_combobox)
+
+
+def display_parameter_stats(param, stats, parameter_combobox):
+    # Find the row corresponding to the selected parameter
+    param_stats = stats[stats['Parameter'] == param]
+
+    if param_stats.empty:
+        return
+
+    # Extract the parameter stats
+    param_values = param_stats.iloc[0].to_dict()
+
+    for widget in f_dataset.winfo_children():
+        if isinstance(widget, (ctk.CTkCanvas, ctk.CTkScrollbar)) and widget != parameter_combobox:
+            widget.destroy()
+
+    # Create a canvas and a scrollbar
+    canvas = ctk.CTkCanvas(f_dataset, bg="white")
+    scrollbar = ctk.CTkScrollbar(f_dataset, fg_color="white", command=canvas.yview)
+    scrollable_frame = ctk.CTkFrame(canvas, fg_color="white")
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+
+    # Place the scrollable frame in the canvas
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Pack the canvas and scrollbar
+    canvas.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
+    scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
+
+    # Display the stats for the selected parameter inside the scrollable frame
+    for key, value in param_values.items():
+        if key == 'Parameter':
+            continue
+        # Parameter name label
+        label = ctk.CTkLabel(scrollable_frame, text=f"{key}:", anchor="w", fg_color="white")
+        label.pack(padx=20, pady=5, anchor="w")
+
+        # Parameter value textbox
+        value_str = f"{value:.4f}" if isinstance(value, (int, float)) else f"{value}"
+        textbox = ctk.CTkTextbox(scrollable_frame, height=1, width=160, wrap="none", fg_color="#f0f0f0", text_color="black")
+        textbox.insert("1.0", value_str)
+        textbox.pack(padx=20, pady=5, anchor="w")
+        textbox.configure(state="disabled")
+
+        # Display the histogram for the parameter
+        plt.figure(figsize=(6, 4))
+        sns.histplot(data=stats[key].dropna(), kde=True, bins=30, color='blue')
+        plt.title(f'Histogram of {key}')
+        plt.xlabel(key)
+        plt.ylabel('Frequency')
+        plt.grid(True)
+        plt.tight_layout()
+        hist_canvas = FigureCanvasTkAgg(plt.gcf(), master=scrollable_frame)
+        hist_canvas.draw()
+        hist_canvas.get_tk_widget().pack()
+        plt.close()
 
 
 # Main window
@@ -463,19 +557,19 @@ root_dir = "./dataset"
 subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, sub_folder))]
 # Combobox to display sub-folder names
 combobox = ctk.CTkComboBox(f_main_right_bottom, values=subfolders)
-combobox.grid(row=1, column=0, columnspan=80, padx=20, pady=10, sticky="ew")
+combobox.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
 
 auto_button = ctk.CTkButton(f_main_right_bottom, text="Auto Optimization", command=auto_optimize)
-auto_button.grid(row=2, column=0, padx=20, pady=20, sticky="ew")
+auto_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
 revert_button = ctk.CTkButton(f_main_right_bottom, text="Revert To Original", command=lambda: revert_to_original())
-revert_button.grid(row=3, column=0, padx=20, pady=20, sticky="ew")
+revert_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
 export_button = ctk.CTkButton(f_main_right_bottom, text="Export Image", command=export_img)
-export_button.grid(row=4, column=0, padx=10, pady=20, sticky="ew")
+export_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
 export_button = ctk.CTkButton(f_main_right_bottom, text="Discard", command=lambda: raise_frame(f_wizard))
-export_button.grid(row=5, column=0, padx=10, pady=20, sticky="ew")
+export_button.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
 # Configure grid in f_main
 f_main.grid_rowconfigure(0, weight=1)
@@ -484,11 +578,11 @@ f_main.grid_columnconfigure(1, weight=1)
 
 # Database Management Interface
 home = ctk.CTkButton(f_dataset, text="Back To Wizard", command=lambda: raise_frame(f_wizard))
-home.pack(padx=20, pady=20, fill='x')
+home.pack(padx=20, pady=10, fill='x')
 
 # Combobox to display sub-folder names
 combobox_m = ctk.CTkComboBox(f_dataset, values=subfolders, command=lambda value: dataset_select(value))
-combobox_m.pack(padx=20, pady=20, fill='x')
+combobox_m.pack(padx=20, pady=10, fill='x')
 
 raise_frame(f_wizard)
 root.mainloop()
