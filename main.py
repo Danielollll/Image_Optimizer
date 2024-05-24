@@ -370,8 +370,6 @@ def dataset_select(value):
     plt.figure(figsize=(18, 4))
     plt.xticks(fontsize=8)
     sns.boxplot(data=original_stats, color='blue')
-    plt.title('Boxplot of Numeric Columns')
-    plt.xlabel('Columns')
     plt.ylabel('Values')
     plt.grid(True)
     plt.tight_layout()
@@ -405,7 +403,7 @@ def display_parameter_stats(param, stats, parameter_combobox):
             widget.destroy()
 
     # Create a canvas and a scrollbar
-    canvas = ctk.CTkCanvas(f_dataset, bg="white")
+    canvas = ctk.CTkCanvas(f_dataset, bg="white", highlightthickness=0)
     scrollbar = ctk.CTkScrollbar(f_dataset, fg_color="white", command=canvas.yview)
     scrollable_frame = ctk.CTkFrame(canvas, fg_color="white")
 
@@ -442,8 +440,6 @@ def display_parameter_stats(param, stats, parameter_combobox):
         # Display the histogram for the parameter
         plt.figure(figsize=(6, 4))
         sns.histplot(data=stats[key].dropna(), kde=True, bins=30, color='blue')
-        plt.title(f'Histogram of {key}')
-        plt.xlabel(key)
         plt.ylabel('Frequency')
         plt.grid(True)
         plt.tight_layout()
@@ -583,6 +579,7 @@ home.pack(padx=20, pady=10, fill='x')
 # Combobox to display sub-folder names
 combobox_m = ctk.CTkComboBox(f_dataset, values=subfolders, command=lambda value: dataset_select(value))
 combobox_m.pack(padx=20, pady=10, fill='x')
+dataset_select(combobox_m.get())
 
 raise_frame(f_wizard)
 root.mainloop()
