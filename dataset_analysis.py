@@ -38,10 +38,6 @@ def dataset_desc(file_path):
     # 过滤出数值型列
     numeric_df = df.select_dtypes(include='number')
 
-    # 创建一个保存图表的目录
-    output_dir = "charts"
-    os.makedirs(output_dir, exist_ok=True)
-
     # Create a list to collect data for all numeric columns
     boxplot_data = []
 
