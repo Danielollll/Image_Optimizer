@@ -301,9 +301,8 @@ def auto_optimize():
     modified_img = img_func.modify_sharpness(modified_img, optimal_vals["avg_sharpness"])
     modified_img = img_func.modify_color_temperature(modified_img, optimal_vals["avg_temperature"])
     modified_img = img_func.modify_exposure(modified_img, optimal_vals["avg_exposure"])
-    modified_img = img_func.modify_white_balance(modified_img, optimal_vals["WB_red"], -1, -1)
-    modified_img = img_func.modify_white_balance(modified_img, -1, optimal_vals["WB_green"], -1)
-    modified_img = img_func.modify_white_balance(modified_img, -1, -1, optimal_vals["WB_blue"])
+    modified_img = img_func.modify_white_balance(modified_img, optimal_vals["WB_red"],
+                                                 optimal_vals["WB_green"], optimal_vals["WB_blue"])
     modified_img = img_func.modify_contrast(modified_img, optimal_vals["contrast"])
     modified_img = img_func.modify_saturation(modified_img, optimal_vals["avg_saturation"])
     modified_img = img_func.modify_highlights(modified_img, optimal_vals["avg_highlights"])

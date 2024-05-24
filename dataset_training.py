@@ -1,7 +1,14 @@
 import json
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
+
+
+def remove_outliers(df, threshold=3):
+    z_scores = np.abs((df - df.mean()) / df.std())
+    df_cleaned = df[(z_scores < threshold).all(axis=1)]
+    return df_cleaned
 
 
 def optimal_val_predict(file_path, contrast, WB_red, WB_green, WB_blue, avg_brightness, avg_perceived_brightness
@@ -38,9 +45,12 @@ def optimal_val_predict(file_path, contrast, WB_red, WB_green, WB_blue, avg_brig
     # 将优秀图片特征数据转换为 DataFrame
     excellent_df = pd.DataFrame(json_objects).select_dtypes(include='number')
 
+    # Remove outliers from your DataFrame
+    cleaned_df = remove_outliers(excellent_df)
+
     # 使用优秀图片特征数据作为训练数据
-    df = excellent_df.copy()
-    target_df = excellent_df
+    df = cleaned_df.copy()
+    target_df = cleaned_df
 
     # 标准化特征
     scaler_X = StandardScaler()
