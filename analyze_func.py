@@ -175,7 +175,7 @@ def modify_contrast(img, contrast_factor):
     grayscale_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     mean_intensity = np.mean(grayscale_image)
     contrast_target = denormalize_value(contrast_factor, 0, 128)
-    contrast_adjustment = (2 * contrast_target / 128) - 0.8
+    contrast_adjustment = (2 * contrast_target / 128) - 1
     # Adjust contrast for each channel separately
     adjusted_channels = []
     for i in range(3):
@@ -242,12 +242,12 @@ def modify_highlights(img, highlights_factor):
     hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     value_channel = hsv_image[:, :, 2]
     current_avg_highlights = np.mean(value_channel)
-    target_highlights = denormalize_value(highlights_factor, 50, 255)
+    target_highlights = denormalize_value(highlights_factor, 25, 255)
     if current_avg_highlights == 0:
         highlights_adjustment = 1
     else:
         highlights_adjustment = target_highlights / current_avg_highlights
-    value_channel = np.clip(value_channel * highlights_adjustment, 0, 255)
+    value_channel = np.clip(value_channel * highlights_adjustment, 0, 225)
     hsv_image[:, :, 2] = value_channel.astype(np.uint8)
     modified_img = cv.cvtColor(hsv_image, cv.COLOR_HSV2BGR)
     return modified_img
@@ -268,7 +268,7 @@ def modify_shadows(img, shadows_factor):
     hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     value_channel = hsv_image[:, :, 2]
     current_avg_shadows = np.mean(value_channel)
-    target_shadows = denormalize_value(shadows_factor, 0, 380)
+    target_shadows = denormalize_value(shadows_factor, 0, 225)
     if current_avg_shadows == 0:
         shadows_adjustment = 1
     else:
@@ -290,7 +290,7 @@ def modify_exposure(img, exposure_factor):
     hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     value_channel = hsv_image[:, :, 2]
     current_avg_exposure = np.mean(value_channel)
-    target_exposure = denormalize_value(exposure_factor, 0, 380)
+    target_exposure = denormalize_value(exposure_factor, 0, 255)
     if current_avg_exposure == 0:
         exposure_adjustment = 1
     else:

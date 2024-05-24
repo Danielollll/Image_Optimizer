@@ -87,12 +87,7 @@ def display_parameters(frame, parameters, img):
     scrollbar = ctk.CTkScrollbar(frame, fg_color="white", command=canvas.yview)
     scrollable_frame = ctk.CTkFrame(canvas, fg_color="white")
 
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")
-        )
-    )
+    scrollable_frame.bind("<Configure>", lambda e=None: canvas.configure(scrollregion=canvas.bbox("all")))
 
     # Function to change background color on focus
     def on_focus_in(event):
@@ -125,7 +120,7 @@ def display_parameters(frame, parameters, img):
         textbox.bind("<FocusIn>", on_focus_in)
         textbox.bind("<FocusOut>", on_focus_out)
         textbox.bind("<FocusOut>",
-                     lambda event, param1=param, textbox1=textbox: param_updator(param1, textbox1))
+                     lambda event=None, param1=param, textbox1=textbox: param_updator(param1, textbox1))
 
     scrollable_frame.update_idletasks()
 
