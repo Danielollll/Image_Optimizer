@@ -1,4 +1,5 @@
 import os
+import tempfile
 import cv2 as cv
 import tkinter as tk
 import customtkinter as ctk
@@ -336,19 +337,18 @@ def auto_optimize():
 
 def export_img():
     if img_buffer is not None:
-        # Encode the original image name using UTF-8 to ensure consistent encoding
-        encoded_img_name = img_name.encode('utf-8')
-        # Construct the full temporary file path with the original image name
-        tmp_file_path = os.path.join(r".\temp", encoded_img_name.decode('utf-8'))
-        # Save the image to the temporary file
-        cv.imwrite(tmp_file_path, img_buffer)
-        try:
-            subprocess.run(['python', 'export_func.py', tmp_file_path], capture_output=True, text=True)
-        except Exception as e:
-            print(e)
-        finally:
-            if os.path.exists(tmp_file_path):
-                os.remove(tmp_file_path)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Encode the original image name using UTF-8 to ensure consistent encoding
+            encoded_img_name = img_name.encode('utf-8')
+            # Construct the full temporary file path with the original image name
+            tmp_file_path = os.path.join(temp_dir, encoded_img_name.decode('utf-8'))
+            # Save the image to the temporary file
+            cv.imwrite(tmp_file_path, img_buffer)
+            print(tmp_file_path)
+            try:
+                subprocess.run(['python', 'export_func.py', tmp_file_path], capture_output=True, text=True)
+            except Exception as e:
+                print(e)
 
 
 def dataset_select(value):
