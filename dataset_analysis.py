@@ -3,38 +3,38 @@ import json
 
 
 def dataset_desc(file_path):
-    # 用于存储 JSON 对象的列表
+    # Stores a list of JSON objects
     json_objects = []
 
-    # 用于构建单个 JSON 对象的字符串
+    # A string that builds a single JSON object
     current_json_str = ""
 
-    # 分割json文件中不同图片数据
+    # Split different image data in json file
     with open(file_path, 'r') as file:
         for line in file:
-            # 移除行首尾的空白字符
+            # Removes whitespace at the beginning and end of a line
             line = line.strip()
-            # 如果这一行以 { 开头，表示一个新的 JSON 对象开始
+            # If the line begins with '{' , it means that a new JSON object starts
             if line.startswith("{"):
                 current_json_str = line
-            # 如果这一行以 } 结尾，表示一个 JSON 对象结束
+            # If this line ends with '}' , it means that a JSON object ends
             elif line.endswith("}"):
                 current_json_str += line
                 try:
-                    # 尝试解析这个 JSON 字符串
+                    # Parsing JSON strings
                     json_obj = json.loads(current_json_str)
                     json_objects.append(json_obj)
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON: {e}")
                 current_json_str = ""
-            # 如果是 JSON 对象的一部分，则添加到当前的 JSON 字符串中
+            # If it is part of a JSON object, it is added to the current JSON string
             else:
                 current_json_str += line
 
-    # 将 JSON 对象的列表转换为 pandas DataFrame
+    # Convert a list of JSON objects to pandas DataFrame
     df = pd.DataFrame(json_objects)
 
-    # 过滤出数值型列
+    # Filter out numeric columns
     numeric_df = df.select_dtypes(include='number')
 
     # Create a list to collect data for all numeric columns
@@ -46,12 +46,12 @@ def dataset_desc(file_path):
         'Q1', 'Q3', 'IQR', 'Variance', 'Standard Deviation', 'Skewness'
     ])
 
-    # 生成统计信息并画图
+    # Generate statistics and draw graphs
     for column in numeric_df.columns:
         data = numeric_df[column].dropna()
         boxplot_data.append(numeric_df[column].dropna())
 
-        # 计算统计信息
+        # Computational statistics
         stats = {
             'Parameter': column,
             'Min': data.min(),

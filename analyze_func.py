@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-# Scale 0-100
+# Normalization: Scale 0-100
 def normalize_value(value, min_value, max_value):
     # Ensure the values are within the correct range
     if value < min_value:
@@ -22,7 +22,7 @@ def denormalize_value(normalized_value, min_value, max_value):
     return denormalized_value
 
 
-# Functions
+# Get & Modify Functions
 def get_noise(img):
     grayscale_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     noise_level = np.std(grayscale_image)
@@ -301,6 +301,7 @@ def modify_exposure(img, exposure_factor):
     return modified_img
 
 
+# Image Full-Analyze Function
 def image_analysis(img_path, res_path):
     src = cv.imread(img_path)
 
@@ -348,21 +349,27 @@ def image_analysis(img_path, res_path):
     print("Image " + img_path + " parameters have been extracted to " + res_path)
 
 
+# Dataset Update Function
 def process_images_in_folders(root_dir):
     for sub_folder in os.listdir(root_dir):
         sub_folder_path = os.path.join(root_dir, sub_folder)
         if os.path.isdir(sub_folder_path):
             # Define the output JSON file path
             output_file = os.path.join(sub_folder_path, f"{sub_folder}_result.json")
-            if os.path.exists(output_file):
-                os.remove(output_file)
+            if not os.path.exists(output_file):
+                with open(output_file, 'w'):
+                    pass
             # Gather all image file paths in the sub-folder
             image_paths = [os.path.join(sub_folder_path, f) for f in os.listdir(sub_folder_path) if
-                           os.path.isfile(os.path.join(sub_folder_path, f))]
-            # Perform image analysis and save the results
-            for image_path in image_paths:
-                image_analysis(image_path, output_file)
-            print(f"Processed {sub_folder} and saved results to {output_file}")
+                           os.path.isfile(os.path.join(sub_folder_path, f)) and f != f"{sub_folder}_result.json"]
+            if not image_paths:
+                print(f"Dataset {sub_folder} is up to date.")
+            else:
+                # Perform image analysis and save the results
+                for image_path in image_paths:
+                    image_analysis(image_path, output_file)
+                    os.remove(image_path)
+                print(f"Processed {sub_folder} and saved results to {output_file}")
 
 
 if __name__ == "__main__":

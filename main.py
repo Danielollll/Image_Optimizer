@@ -1,19 +1,19 @@
 import os
 import tempfile
+import subprocess
+import seaborn as sns
 import cv2 as cv
 import tkinter as tk
+from tkinter import filedialog, messagebox
 import customtkinter as ctk
 import numpy as np
 import pandas as pd
 from PIL import Image
-from tkinter import filedialog, messagebox
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import analyze_func as img_func
-import dataset_training as dataset_training
-import subprocess
+import dataset_predict as predict
 import dataset_analysis
-import seaborn as sns
 
 
 def raise_frame(next_frame):
@@ -26,11 +26,13 @@ def on_close():
 
 
 def select_img():
+    # Select image file
     filename = filedialog.askopenfilename(
         title="Select An Image",
         filetypes=(("Image", "*.png"), ("Image", "*.jpg"), ("Image", "*.jpeg"))
     )
     if filename:
+        # Read image file
         global img_name
         global original_img
         img_name = os.path.basename(filename)
@@ -54,7 +56,7 @@ def select_img():
             average_temperature = img_func.get_color_temperature(img)
             average_noisy = img_func.get_noise(img)
             average_exposure = img_func.get_exposure(img)
-            # Get image parameter values
+            # Display image parameter values
             parameters = {
                 "Red": WB_red,
                 "Green": WB_green,
@@ -82,11 +84,10 @@ def display_parameters(frame, parameters, img):
     global img_buffer
     img_buffer = img
 
-    # Create a canvas
+    # Create a scrollable canvas
     canvas = ctk.CTkCanvas(frame, highlightthickness=0, bg="white")
     scrollbar = ctk.CTkScrollbar(frame, fg_color="white", command=canvas.yview)
     scrollable_frame = ctk.CTkFrame(canvas, fg_color="white")
-
     scrollable_frame.bind("<Configure>", lambda e=None: canvas.configure(scrollregion=canvas.bbox("all")))
 
     # Function to change background color on focus
@@ -105,11 +106,11 @@ def display_parameters(frame, parameters, img):
 
     # Adding parameters to the scrollable frame
     for i, (param, value) in enumerate(parameters.items()):
-        # Parameter name label
+        # Parameter's name label
         label = ctk.CTkLabel(scrollable_frame, text=f"{param}", anchor="w", fg_color="white")
         label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
 
-        # Parameter value textbox
+        # Parameter's value textbox
         value_str = f"{value}"
         textbox = ctk.CTkTextbox(scrollable_frame, height=1, width=160, wrap="none", fg_color="#f0f0f0",
                                  text_color="gray")
@@ -126,11 +127,13 @@ def display_parameters(frame, parameters, img):
 
 
 def param_updator(param, textbox):
+    # Get new parameter value
     try:
         new_val = float(textbox.get("1.0", "end-1c"))
     except ValueError:
         print(f"Invalid value for {param}: {textbox.get('1.0', 'end-1c')}")
         return
+    # Pass it to its corresponding 'modify' function
     global img_buffer
     modified_img = None
     if param == "Red":
@@ -163,6 +166,7 @@ def param_updator(param, textbox):
         modified_img = img_func.modify_exposure(img_buffer, new_val)
     else:
         pass
+    # Update img_buffer & Refresh the window
     if modified_img is not None:
         img_buffer = modified_img
         plot_img_hist(img_buffer, f_main_left_top, 7, 3)
@@ -203,9 +207,9 @@ def plot_img_hist(img, frame, width, height):
 
     plt.figure(figsize=(width, height))
 
-    # Plot histogram for grayscale hist
+    # Plot grayscale hist
     plt.hist(img.ravel(), 256, [0, 256])
-    # Color hist
+    # Plot color hist
     color = ('blue', 'green', 'red')
     for i, color in enumerate(color):
         hist = cv.calcHist([img], [i], None, [256], [0, 256])
@@ -219,7 +223,7 @@ def plot_img_hist(img, frame, width, height):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    # Get the current figure & draw
+    # Get the current figure & draw & close
     figure = plt.gcf()
     canvas = FigureCanvasTkAgg(figure, master=frame)
     canvas.draw()
@@ -228,6 +232,7 @@ def plot_img_hist(img, frame, width, height):
 
 
 def revert_to_original():
+    # Revert to original_img
     global original_img
     plot_img_hist(original_img, f_main_left_top, 7, 3)
     display_image(original_img, f_main_right_top)
@@ -244,7 +249,7 @@ def revert_to_original():
     average_temperature = img_func.get_color_temperature(original_img)
     average_noisy = img_func.get_noise(original_img)
     average_exposure = img_func.get_exposure(original_img)
-    # Get image parameter values
+    # Display image parameter values
     parameters = {
         "Red": WB_red,
         "Green": WB_green,
@@ -265,7 +270,9 @@ def revert_to_original():
 
 
 def auto_optimize():
+    # Get current image
     global img_buffer
+    # Check filter data availability
     json_dataset_path = ".\\dataset\\" + combobox.get() + "\\" + combobox.get() + "_result.json"
     if not os.path.exists(json_dataset_path):
         tk.messagebox.showinfo("Cannot find dataset",
@@ -285,11 +292,11 @@ def auto_optimize():
     avg_noisy = img_func.get_noise(img_buffer)
     avg_exposure = img_func.get_exposure(img_buffer)
 
-    # Predict optimal values
-    optimal_vals = dataset_training.optimal_val_predict(json_dataset_path, contrast, WB_red, WB_green, WB_blue,
-                                                        avg_brightness, avg_perceived_brightness, avg_hue,
-                                                        avg_saturation, avg_sharpness, avg_highlights, avg_shadow,
-                                                        avg_temperature, avg_noisy, avg_exposure)
+    # Pass the parameters & Predict optimal values
+    optimal_vals = predict.optimal_val_predict(json_dataset_path, contrast, WB_red, WB_green, WB_blue,
+                                               avg_brightness, avg_perceived_brightness, avg_hue,
+                                               avg_saturation, avg_sharpness, avg_highlights, avg_shadow,
+                                               avg_temperature, avg_noisy, avg_exposure)
 
     # Ensure optimal_vals contains scalar values
     optimal_vals = {key: val.item() if isinstance(val, pd.Series) else val for key, val in optimal_vals.items()}
@@ -309,11 +316,12 @@ def auto_optimize():
     modified_img = img_func.modify_shadows(modified_img, optimal_vals["avg_shadow"])
     modified_img = img_func.modify_perceived_avg_brightness(modified_img, optimal_vals["avg_perceived_brightness"])
 
+    # Update Window
     if modified_img is not None:
         img_buffer = modified_img
         plot_img_hist(img_buffer, f_main_left_top, 7, 3)
         display_image(img_buffer, f_main_right_top)
-        # Get image parameter values
+        # Display image parameter values
         parameters = {
             "Red": WB_red,
             "Green": WB_green,
@@ -335,17 +343,17 @@ def auto_optimize():
 
 def export_img():
     if img_buffer is not None:
+        # Create a temporary address & Pass the temporarily stored image file
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Encode the original image name using UTF-8 to ensure consistent encoding
+            # Encode the original image name using UTF-8
             encoded_img_name = img_name.encode('utf-8')
-            # Construct the full temporary file path with the original image name
             tmp_file_path = os.path.join(temp_dir, encoded_img_name.decode('utf-8'))
-            # Save the image to the temporary file
             cv.imwrite(tmp_file_path, img_buffer)
+            # Start Export Window
             try:
                 subprocess.run(['python', 'export_func.py', tmp_file_path], capture_output=True, text=True)
             except Exception as e:
-                print(e)
+                messagebox.showerror("Exception", "Error occurred: " + str(e))
 
 
 def dataset_select(value):
@@ -361,9 +369,9 @@ def dataset_select(value):
     parameter_label = ctk.CTkLabel(f_dataset, text="Select Parameter:")
     parameter_label.pack(padx=20, pady=10, anchor="w")
 
-    # Clear previous stats
+    # Clear previous widgets
     for widget in f_dataset.winfo_children():
-        if widget != home and widget != update and widget != combobox_m:
+        if widget != home and widget != update and widget != crawler and widget != combobox_m:
             widget.destroy()
 
     # Display the box plot of all numeric columns
@@ -378,9 +386,11 @@ def dataset_select(value):
     boxplot_canvas.get_tk_widget().pack()
     plt.close()
 
+    # Update & Pack parameter_combobox
     global parameter_combobox
     parameter_combobox = ctk.CTkComboBox(f_dataset, values=stats['Parameter'].tolist(),
-                                         command=lambda param: display_parameter_stats(param, stats, parameter_combobox))
+                                         command=lambda param: display_parameter_stats(param, stats,
+                                                                                       parameter_combobox))
     parameter_combobox.pack(padx=20, pady=10, fill="x")
 
     # Initial display of the first parameter's stats
@@ -391,13 +401,11 @@ def dataset_select(value):
 def display_parameter_stats(param, stats, parameter_combobox):
     # Find the row corresponding to the selected parameter
     param_stats = stats[stats['Parameter'] == param]
-
     if param_stats.empty:
         return
 
     # Extract the parameter stats
     param_values = param_stats.iloc[0].to_dict()
-
     for widget in f_dataset.winfo_children():
         if isinstance(widget, (ctk.CTkCanvas, ctk.CTkScrollbar)) and widget != parameter_combobox:
             widget.destroy()
@@ -406,7 +414,6 @@ def display_parameter_stats(param, stats, parameter_combobox):
     canvas = ctk.CTkCanvas(f_dataset, bg="white", highlightthickness=0)
     scrollbar = ctk.CTkScrollbar(f_dataset, fg_color="white", command=canvas.yview)
     scrollable_frame = ctk.CTkFrame(canvas, fg_color="white")
-
     scrollable_frame.bind(
         "<Configure>",
         lambda e: canvas.configure(
@@ -432,7 +439,8 @@ def display_parameter_stats(param, stats, parameter_combobox):
 
         # Parameter value textbox
         value_str = f"{value:.4f}" if isinstance(value, (int, float)) else f"{value}"
-        textbox = ctk.CTkTextbox(scrollable_frame, height=1, width=160, wrap="none", fg_color="#f0f0f0", text_color="black")
+        textbox = ctk.CTkTextbox(scrollable_frame, height=1, width=160, wrap="none", fg_color="#f0f0f0",
+                                 text_color="black")
         textbox.insert("1.0", value_str)
         textbox.pack(padx=20, pady=5, anchor="w")
         textbox.configure(state="disabled")
@@ -468,142 +476,149 @@ def dataset_update():
     update.update()
 
 
-# Main window
-img_buffer = None
-bg_color = "white"
-root = ctk.CTk(bg_color)
-root.title("Image Optimizer")
-root.minsize(800, 500)
-root.iconbitmap('./icon/icon.ico')
-root.protocol("WM_DELETE_WINDOW", on_close)
+if __name__ == "__main__":
+    # Main window
+    img_buffer = None
+    bg_color = "white"
+    root = ctk.CTk(bg_color)
+    root.title("Image Optimizer")
+    root.minsize(800, 500)
+    root.iconbitmap('./icon/icon.ico')
+    root.protocol("WM_DELETE_WINDOW", on_close)
 
-# Frames
-f_wizard = ctk.CTkFrame(root, fg_color=bg_color)
-f_main = ctk.CTkFrame(root, fg_color=bg_color)
-f_dataset = ctk.CTkFrame(root, fg_color=bg_color)
+    # Frames
+    f_wizard = ctk.CTkFrame(root, fg_color=bg_color)
+    f_main = ctk.CTkFrame(root, fg_color=bg_color)
+    f_dataset = ctk.CTkFrame(root, fg_color=bg_color)
 
-for f in (f_wizard, f_main, f_dataset):
-    f.grid(row=0, column=0, sticky="nsew")
+    for f in (f_wizard, f_main, f_dataset):
+        f.grid(row=0, column=0, sticky="nsew")
 
-# Configure grid to expand
-root.grid_rowconfigure(0, weight=1)
-root.grid_columnconfigure(0, weight=1)
+    # Configure grid to expand
+    root.grid_rowconfigure(0, weight=1)
+    root.grid_columnconfigure(0, weight=1)
 
-# Predefined root directory
-root_dir = "./dataset"
-subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, sub_folder))]
+    # Predefined root directory
+    root_dir = "./dataset"
+    subfolders = [sub_folder for sub_folder in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, sub_folder))]
 
-# Wizard Interface
-f_wizard_bg_color = "white"
+    # Wizard Interface
+    f_wizard_bg_color = "white"
 
-# Wizard Interface Left
-f_wizard_left = ctk.CTkFrame(f_wizard, fg_color=f_wizard_bg_color)
-f_wizard_left.grid(row=0, column=0, sticky="nsew")
-f_wizard_left.grid_rowconfigure(0, weight=1)
-f_wizard_left.grid_columnconfigure(0, weight=1)
+    # Wizard Interface Left
+    f_wizard_left = ctk.CTkFrame(f_wizard, fg_color=f_wizard_bg_color)
+    f_wizard_left.grid(row=0, column=0, sticky="nsew")
+    f_wizard_left.grid_rowconfigure(0, weight=1)
+    f_wizard_left.grid_columnconfigure(0, weight=1)
 
-# Wizard Interface Right
-f_wizard_right = ctk.CTkFrame(f_wizard, fg_color=f_wizard_bg_color)
-f_wizard_right.grid(row=0, column=1, sticky="nsew")
-f_wizard_right.grid_rowconfigure(0, weight=1)
-f_wizard_right.grid_columnconfigure(0, weight=1)
+    # Wizard Interface Right
+    f_wizard_right = ctk.CTkFrame(f_wizard, fg_color=f_wizard_bg_color)
+    f_wizard_right.grid(row=0, column=1, sticky="nsew")
+    f_wizard_right.grid_rowconfigure(0, weight=1)
+    f_wizard_right.grid_columnconfigure(0, weight=1)
 
-# Configure grid in f_wizard
-f_wizard.grid_rowconfigure(0, weight=1)
-f_wizard.grid_columnconfigure(0, weight=1)
-f_wizard.grid_columnconfigure(1, weight=1)
+    # Configure grid in f_wizard
+    f_wizard.grid_rowconfigure(0, weight=1)
+    f_wizard.grid_columnconfigure(0, weight=1)
+    f_wizard.grid_columnconfigure(1, weight=1)
 
-# Load Wizard Interface Icons
-icon_select = ctk.CTkImage(Image.open("./icon/select.png"), size=(100, 100))
-icon_db_man = ctk.CTkImage(Image.open("./icon/edit.png"), size=(100, 100))
+    # Load Wizard Interface Icons
+    icon_select = ctk.CTkImage(Image.open("./icon/select.png"), size=(100, 100))
+    icon_db_man = ctk.CTkImage(Image.open("./icon/edit.png"), size=(100, 100))
 
-# Buttons with icons and custom styles
-select_img_button = ctk.CTkButton(
-    f_wizard_left, text="Select An Image", command=select_img,
-    image=icon_select, compound="top", fg_color="transparent", text_color="black", hover_color="lightblue"
-)
-select_img_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+    # Buttons with icons and custom styles
+    select_img_button = ctk.CTkButton(
+        f_wizard_left, text="Select An Image", command=select_img,
+        image=icon_select, compound="top", fg_color="transparent", text_color="black", hover_color="lightblue"
+    )
+    select_img_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
-db_manage_button = ctk.CTkButton(
-    f_wizard_right, text="Dataset Management", command=lambda: raise_frame(f_dataset),
-    image=icon_db_man, compound="top", fg_color="transparent", text_color="black", hover_color="lightblue"
-)
-db_manage_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+    db_manage_button = ctk.CTkButton(
+        f_wizard_right, text="Dataset Management", command=lambda: raise_frame(f_dataset),
+        image=icon_db_man, compound="top", fg_color="transparent", text_color="black", hover_color="lightblue"
+    )
+    db_manage_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
-# Main Interface
-f_main_bg_color = "white"
+    # Main Interface
+    f_main_bg_color = "white"
 
-# Main Interface Left
-f_main_left = ctk.CTkFrame(f_main, fg_color=f_main_bg_color)
-f_main_left.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-f_main_left.grid_rowconfigure(0, weight=1)
-f_main_left.grid_rowconfigure(1, weight=1)  # Button
-f_main_left.grid_columnconfigure(0, weight=1)
+    # Main Interface Left
+    f_main_left = ctk.CTkFrame(f_main, fg_color=f_main_bg_color)
+    f_main_left.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+    f_main_left.grid_rowconfigure(0, weight=1)
+    f_main_left.grid_rowconfigure(1, weight=1)  # Button
+    f_main_left.grid_columnconfigure(0, weight=1)
 
-# Main Interface Left Top
-f_main_left_top = ctk.CTkFrame(f_main_left, fg_color=f_main_bg_color)
-f_main_left_top.grid(row=0, column=0, sticky="nsew")
-f_main_left_top.grid_rowconfigure(0, weight=1)
-f_main_left_top.grid_columnconfigure(0, weight=1)
+    # Main Interface Left Top
+    f_main_left_top = ctk.CTkFrame(f_main_left, fg_color=f_main_bg_color)
+    f_main_left_top.grid(row=0, column=0, sticky="nsew")
+    f_main_left_top.grid_rowconfigure(0, weight=1)
+    f_main_left_top.grid_columnconfigure(0, weight=1)
 
-# Main Interface Left Bottom
-f_main_left_bottom = ctk.CTkFrame(f_main_left, fg_color=f_main_bg_color)
-f_main_left_bottom.grid(row=1, column=0, sticky="nsew")  # Button
-f_main_left_bottom.grid_rowconfigure(0, weight=1)
-f_main_left_bottom.grid_columnconfigure(0, weight=1)
+    # Main Interface Left Bottom
+    f_main_left_bottom = ctk.CTkFrame(f_main_left, fg_color=f_main_bg_color)
+    f_main_left_bottom.grid(row=1, column=0, sticky="nsew")  # Button
+    f_main_left_bottom.grid_rowconfigure(0, weight=1)
+    f_main_left_bottom.grid_columnconfigure(0, weight=1)
 
-# Main Interface Right
-f_main_right = ctk.CTkFrame(f_main, fg_color=f_main_bg_color)
-f_main_right.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-f_main_right.grid_rowconfigure(0, weight=1)
-f_main_right.grid_rowconfigure(1, weight=1)
-f_main_right.grid_columnconfigure(0, weight=1)
+    # Main Interface Right
+    f_main_right = ctk.CTkFrame(f_main, fg_color=f_main_bg_color)
+    f_main_right.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+    f_main_right.grid_rowconfigure(0, weight=1)
+    f_main_right.grid_rowconfigure(1, weight=1)
+    f_main_right.grid_columnconfigure(0, weight=1)
 
-# Main Interface Right Top
-f_main_right_top = ctk.CTkFrame(f_main_right, fg_color=f_main_bg_color)
-f_main_right_top.grid(row=0, column=0, sticky="nsew")
-f_main_right_top.grid_rowconfigure(0, weight=1)
-f_main_right_top.grid_columnconfigure(0, weight=1)
-# Main Interface Right Bottom
-f_main_right_bottom = ctk.CTkFrame(f_main_right, fg_color=f_main_bg_color)
-f_main_right_bottom.grid(row=1, column=0, sticky="nsew")
-f_main_right_bottom.grid_rowconfigure(0, weight=1)
-f_main_right_bottom.grid_columnconfigure(0, weight=1)
+    # Main Interface Right Top
+    f_main_right_top = ctk.CTkFrame(f_main_right, fg_color=f_main_bg_color)
+    f_main_right_top.grid(row=0, column=0, sticky="nsew")
+    f_main_right_top.grid_rowconfigure(0, weight=1)
+    f_main_right_top.grid_columnconfigure(0, weight=1)
 
-# Combobox to display sub-folder names
-combobox = ctk.CTkComboBox(f_main_right_bottom, values=subfolders)
-combobox.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
+    # Main Interface Right Bottom
+    f_main_right_bottom = ctk.CTkFrame(f_main_right, fg_color=f_main_bg_color)
+    f_main_right_bottom.grid(row=1, column=0, sticky="nsew")
+    f_main_right_bottom.grid_rowconfigure(0, weight=1)
+    f_main_right_bottom.grid_columnconfigure(0, weight=1)
 
-auto_button = ctk.CTkButton(f_main_right_bottom, text="Auto Optimization", command=auto_optimize)
-auto_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+    # Combobox to display sub-folder names
+    combobox = ctk.CTkComboBox(f_main_right_bottom, values=subfolders)
+    combobox.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
 
-revert_button = ctk.CTkButton(f_main_right_bottom, text="Revert To Original", command=lambda: revert_to_original())
-revert_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+    auto_button = ctk.CTkButton(f_main_right_bottom, text="Auto Optimization", command=auto_optimize)
+    auto_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-export_button = ctk.CTkButton(f_main_right_bottom, text="Export Image", command=export_img)
-export_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+    revert_button = ctk.CTkButton(f_main_right_bottom, text="Revert To Original", command=lambda: revert_to_original())
+    revert_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
-export_button = ctk.CTkButton(f_main_right_bottom, text="Discard", command=lambda: raise_frame(f_wizard))
-export_button.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
+    export_button = ctk.CTkButton(f_main_right_bottom, text="Export Image", command=export_img)
+    export_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
-# Configure grid in f_main
-f_main.grid_rowconfigure(0, weight=1)
-f_main.grid_columnconfigure(0, weight=1)
-f_main.grid_columnconfigure(1, weight=1)
+    export_button = ctk.CTkButton(f_main_right_bottom, text="Discard", command=lambda: raise_frame(f_wizard))
+    export_button.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
-# Database Management Interface
-# Back To Wizard Button
-home = ctk.CTkButton(f_dataset, text="Back To Wizard", command=lambda: raise_frame(f_wizard))
-home.pack(padx=20, pady=10, fill='x')
+    # Configure grid in f_main
+    f_main.grid_rowconfigure(0, weight=1)
+    f_main.grid_columnconfigure(0, weight=1)
+    f_main.grid_columnconfigure(1, weight=1)
 
-# Dataset Update Button
-update = ctk.CTkButton(f_dataset, text="Update Dataset", command=dataset_update)
-update.pack(padx=20, pady=10, fill='x')
+    # Database Management Interface
+    # Back To Wizard Button
+    home = ctk.CTkButton(f_dataset, text="Back To Wizard", command=lambda: raise_frame(f_wizard))
+    home.pack(padx=20, pady=5, fill='x')
 
-# Combobox to display sub-folder names
-combobox_m = ctk.CTkComboBox(f_dataset, values=subfolders, command=lambda value: dataset_select(value))
-combobox_m.pack(padx=20, pady=10, fill='x')
-dataset_select(combobox_m.get())
+    # Crawler Button
+    crawler = ctk.CTkButton(f_dataset, text="Get More Images from Unsplash",
+                            command=lambda: subprocess.run(['python', 'crawler.py']))
+    crawler.pack(padx=20, pady=5, fill='x')
 
-raise_frame(f_wizard)
-root.mainloop()
+    # Dataset Update Button
+    update = ctk.CTkButton(f_dataset, text="Update Dataset", command=dataset_update)
+    update.pack(padx=20, pady=5, fill='x')
+
+    # Combobox to display sub-folder names
+    combobox_m = ctk.CTkComboBox(f_dataset, values=subfolders, command=lambda value: dataset_select(value))
+    combobox_m.pack(padx=20, pady=5, fill='x')
+    dataset_select(combobox_m.get())
+
+    raise_frame(f_wizard)
+    root.mainloop()
