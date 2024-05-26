@@ -1,4 +1,5 @@
 import os
+import uuid
 import tempfile
 import subprocess
 import seaborn as sns
@@ -131,7 +132,7 @@ def param_updator(param, textbox):
     try:
         new_val = float(textbox.get("1.0", "end-1c"))
     except ValueError:
-        print(f"Invalid value for {param}: {textbox.get('1.0', 'end-1c')}")
+        messagebox.showerror("Invalid input", f"Invalid value for {param}: {textbox.get('1.0', 'end-1c')}")
         return
     # Pass it to its corresponding 'modify' function
     global img_buffer
@@ -346,8 +347,16 @@ def export_img():
         # Create a temporary address & Pass the temporarily stored image file
         with tempfile.TemporaryDirectory() as temp_dir:
             # Encode the original image name using UTF-8
-            encoded_img_name = img_name.encode('utf-8')
-            tmp_file_path = os.path.join(temp_dir, encoded_img_name.decode('utf-8'))
+            if all(ord(char) < 128 for char in img_name):
+                # If all characters in img_name are ASCII characters
+                encoded_img_name = img_name.encode('utf-8')
+            else:
+                # If img_name contains non-ASCII characters
+                name, extension = os.path.splitext(img_name)
+                uuid_bytes = str(uuid.uuid4()).encode('utf-8')
+                encoded_img_name = uuid_bytes + extension.encode('utf-8')
+                encoded_img_name_str = encoded_img_name.decode('utf-8')
+            tmp_file_path = os.path.join(temp_dir, encoded_img_name_str)
             cv.imwrite(tmp_file_path, img_buffer)
             # Start Export Window
             try:

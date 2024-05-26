@@ -8668,3 +8668,20 @@
     "avg_noisy": 20.10705919061536,
     "avg_exposure": 51.44735637053176
 }
+{
+    "File": "./dataset\\animals\\animals_511.jpg",
+    "contrast": 32.19385923418188,
+    "WB_red": 45.18473863442606,
+    "WB_green": 51.20671745270329,
+    "WB_blue": 59.43384625141933,
+    "avg_brightness": 42.443297452944925,
+    "avg_perceived_brightness": 48.266797065555934,
+    "avg_hue": 10.163876986799844,
+    "avg_saturation": 25.05718485187613,
+    "avg_sharpness": 28.038218259143548,
+    "avg_highlights": 13.205205743963068,
+    "avg_shadow": 76.04602813720703,
+    "avg_temperature": 50.04536114134103,
+    "avg_noisy": 16.16005483127561,
+    "avg_exposure": 43.5423917794068
+}

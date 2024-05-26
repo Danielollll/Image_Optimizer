@@ -1,4 +1,4 @@
-animals,52,510
+animals,54,511
 people,51,500
 food-drink,52,510
 nature,51,500
